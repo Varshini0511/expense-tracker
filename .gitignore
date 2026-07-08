@@ -1,0 +1,25 @@
+# .NET build output
+bin/
+obj/
+.vs/
+*.user
+
+# Secrets — never commit these
+ExpenseTracker/ExpenseTracker/appsettings.Development.json
+**/appsettings.Production.json
+.env
+.env.local
+.env*.local
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+
+# Old unused duplicate project
+ExpenseTracker/ExpenseManager/
+ExpenseTracker/ExpenseManager.zip
+
+# OS/editor cruft
+.DS_Store
+Thumbs.db
