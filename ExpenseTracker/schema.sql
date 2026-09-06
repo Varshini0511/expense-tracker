@@ -1,10 +1,15 @@
 -- ExpenseTracker database schema.
--- Run this once against a fresh Postgres database (e.g. a new Supabase project)
--- via its SQL Editor, before pointing the backend's connection string at it.
+-- Lives in its own Postgres schema (namespace) called "expense_tracker" so it
+-- doesn't collide with other tables/apps in the same Supabase project.
+-- Run this once via the Supabase SQL Editor, then point the backend's
+-- connection string at this project with "Search Path=expense_tracker" set
+-- (see DEPLOYMENT.md) so unqualified table names resolve here automatically.
 
 CREATE EXTENSION IF NOT EXISTS vector;
 
-CREATE TABLE IF NOT EXISTS expenses (
+CREATE SCHEMA IF NOT EXISTS expense_tracker;
+
+CREATE TABLE IF NOT EXISTS expense_tracker.expenses (
     id            SERIAL PRIMARY KEY,
     description   TEXT NOT NULL,
     amount        NUMERIC(12, 2) NOT NULL,
@@ -14,7 +19,7 @@ CREATE TABLE IF NOT EXISTS expenses (
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS expense_policies (
+CREATE TABLE IF NOT EXISTS expense_tracker.expense_policies (
     id           SERIAL PRIMARY KEY,
     policy_text  TEXT NOT NULL,
     embedding    VECTOR(768)

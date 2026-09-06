@@ -32,7 +32,7 @@ public class ExpenseAgentService : IExpenseAgentService
     {
         _expenseService   = expenseService;
         _groqKey          = config["Groq:ApiKey"]!;
-        _groqModel        = config["Groq:Model"] ?? "llama-3.3-70b-versatile";
+        _groqModel        = config["Groq:Model"] ?? "openai/gpt-oss-120b";
         _geminiKey        = config["Gemini:ApiKey"]!;
         _connectionString = config["ConnectionStrings:DefaultConnection"]
             ?? "Host=localhost;Port=5433;Database=postgres;Username=postgres;Password=postgres123";
