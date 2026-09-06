@@ -107,7 +107,7 @@ public class ExpenseAgentService : IExpenseAgentService
             new JsonObject
             {
                 ["role"]    = "system",
-                ["content"] = "You are an AI expense management assistant. Use the available tools to answer questions about expenses and company policies. Always use a tool to get real data — never guess."
+                ["content"] = "You are an AI expense management assistant. Use the available tools to answer questions about expenses and company policies. Always use a tool to get real data — never guess. Tool results are authoritative: report what they contain and never claim a tool failed unless its result literally starts with 'Error:'."
             },
             new JsonObject
             {
@@ -122,6 +122,9 @@ public class ExpenseAgentService : IExpenseAgentService
             var requestBody = new JsonObject
             {
                 ["model"]       = _groqModel,
+                // temperature 0 — tool calling needs determinism. At the API default (1.0)
+                // the model sometimes ignores a successful tool result and invents a failure.
+                ["temperature"] = 0,
                 ["messages"]    = JsonNode.Parse(messages.ToJsonString()),
                 ["tools"]       = JsonNode.Parse(tools.ToJsonString()),
                 ["tool_choice"] = "auto"
@@ -190,7 +193,46 @@ public class ExpenseAgentService : IExpenseAgentService
             }
         }
 
-        return "5Could not complete the request.";
+        // Loop budget exhausted — the model kept calling tools without concluding.
+        // Ask once more with no tools available, forcing it to answer from what it
+        // already gathered rather than returning a dead end to the user.
+        return await AskForFinalAnswerAsync(messages)
+               ?? "Could not complete the request.";
+    }
+
+    // Final pass with tools withheld, so the model must produce a text answer.
+    private async Task<string?> AskForFinalAnswerAsync(JsonArray messages)
+    {
+        try
+        {
+            var body = new JsonObject
+            {
+                ["model"]       = _groqModel,
+                ["temperature"] = 0,
+                ["messages"]    = JsonNode.Parse(messages.ToJsonString())
+            };
+
+            var req = new HttpRequestMessage(
+                HttpMethod.Post, "https://api.groq.com/openai/v1/chat/completions");
+            req.Headers.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _groqKey);
+            req.Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
+
+            var resp = await _httpClient.SendAsync(req);
+            if (!resp.IsSuccessStatusCode) return null;
+
+            using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+            return doc.RootElement
+                .GetProperty("choices")[0]
+                .GetProperty("message")
+                .GetProperty("content")
+                .GetString();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Final-answer pass failed");
+            return null;
+        }
     }
 
     // ── Submit expense via agent ──────────────────────────────
@@ -278,9 +320,10 @@ public class ExpenseAgentService : IExpenseAgentService
         {
             var body = new JsonObject
             {
-                ["model"]    = _groqModel,
-                ["messages"] = JsonNode.Parse(messages.ToJsonString()),
-                ["tools"]    = JsonNode.Parse(tools.ToJsonString())
+                ["model"]       = _groqModel,
+                ["temperature"] = 0,
+                ["messages"]    = JsonNode.Parse(messages.ToJsonString()),
+                ["tools"]       = JsonNode.Parse(tools.ToJsonString())
             };
 
             var req = new HttpRequestMessage(HttpMethod.Post, url);
