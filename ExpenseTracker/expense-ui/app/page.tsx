@@ -1,3 +1,4 @@
+// Updated: change Dashboard label to Home
 "use client";
 import { useState } from "react";
 import Dashboard  from "@/components/Dashboard";
@@ -6,7 +7,7 @@ import Agent      from "@/components/Agent";
 import Policies   from "@/components/Policies";
 
 const TABS = [
-  { id: "dashboard", label: "Dashboard",   icon: "⬡" },
+  { id: "dashboard", label: "Home", icon: "⬡" },
   { id: "add",       label: "Add expense", icon: "+" },
   { id: "agent",     label: "AI agent",    icon: "◈" },
   { id: "policies",  label: "Policies",    icon: "≡" },
