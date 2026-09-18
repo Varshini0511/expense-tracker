@@ -47,6 +47,7 @@ public class AgentRequest
 public class AddPolicyRequest
 {
     public string PolicyText { get; set; } = string.Empty;
+    public string? PolicyType { get; set; }
 }
 
 // Returned by the agent after it checks policy AND saves the expense itself
@@ -54,7 +55,7 @@ public class AgentExpenseResult
 {
     public int    ExpenseId      { get; set; }
     public bool   IsCompliant    { get; set; }
-    public string PolicyAdvice   { get; set; } = string.Empty;
+    public string PolicyAdvice   { get; string; } = string.Empty;
     public string RelevantPolicy { get; set; } = string.Empty;
     public string Status         { get; set; } = string.Empty;
     public string AgentReasoning { get; set; } = string.Empty;
