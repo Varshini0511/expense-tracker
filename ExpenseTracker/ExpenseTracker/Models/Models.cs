@@ -46,7 +46,8 @@ public class AgentRequest
 
 public class AddPolicyRequest
 {
-    public string PolicyText { get; set; } = string.Empty;
+    public string  PolicyText { get; set; } = string.Empty;
+    public string? Category   { get; set; }
 }
 
 // Returned by the agent after it checks policy AND saves the expense itself
