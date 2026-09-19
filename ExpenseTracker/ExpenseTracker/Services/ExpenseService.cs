@@ -22,9 +22,10 @@ public interface IExpenseService
 
 public class PolicyRow
 {
-    public int    Id         { get; set; }
-    public string PolicyText { get; set; } = string.Empty;
-    public bool   Embedded   { get; set; }
+    public int     Id         { get; set; }
+    public string  PolicyText { get; set; } = string.Empty;
+    public string? Category   { get; set; }
+    public bool    Embedded   { get; set; }
 }
 
 public class ExpenseService : IExpenseService
