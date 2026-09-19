@@ -193,25 +193,25 @@ public class ExpenseService : IExpenseService
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
-    public async Task<int> AddPolicyAsync(string policyText)
+    public async Task<int> AddPolicyAsync(AddPolicyRequest request)
     {
         await using var conn = await _dataSource!.OpenConnectionAsync();
-        var sql = "INSERT INTO expense_policies (policy_text) VALUES (@text) RETURNING id";
+        var sql = "INSERT INTO expense_policies (policy_text, category) VALUES (@text, @category) RETURNING id";
         await using var cmd = new NpgsqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("text", policyText);
+        cmd.Parameters.AddWithValue("text",     request.PolicyText);
+        cmd.Parameters.AddWithValue("category", (object?)request.Category ?? DBNull.Value);
         var id = await cmd.ExecuteScalarAsync();
         return Convert.ToInt32(id);
     }
 
-    public async Task<bool> UpdatePolicyAsync(int id, string policyText)
+    public async Task<bool> UpdatePolicyAsync(int id, AddPolicyRequest request)
     {
         await using var conn = await _dataSource!.OpenConnectionAsync();
-        // Editing the text invalidates the old embedding, so clear it.
-        // The policy must be re-embedded before it's used in policy checks again.
-        var sql = "UPDATE expense_policies SET policy_text = @text, embedding = NULL WHERE id = @id";
+        var sql = "UPDATE expense_policies SET policy_text = @text, category = @category, embedding = NULL WHERE id = @id";
         await using var cmd = new NpgsqlCommand(sql, conn);
-        cmd.Parameters.AddWithValue("text", policyText);
-        cmd.Parameters.AddWithValue("id",   id);
+        cmd.Parameters.AddWithValue("text",     request.PolicyText);
+        cmd.Parameters.AddWithValue("category", (object?)request.Category ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("id",       id);
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
@@ -219,7 +219,7 @@ public class ExpenseService : IExpenseService
     {
         var rows = new List<PolicyRow>();
         await using var conn = await _dataSource!.OpenConnectionAsync();
-        var sql = "SELECT id, policy_text, embedding IS NOT NULL FROM expense_policies ORDER BY id";
+        var sql = "SELECT id, policy_text, category, embedding IS NOT NULL FROM expense_policies ORDER BY id";
         await using var cmd    = new NpgsqlCommand(sql, conn);
         await using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())
@@ -227,45 +227,62 @@ public class ExpenseService : IExpenseService
             {
                 Id         = reader.GetInt32(0),
                 PolicyText = reader.GetString(1),
-                Embedded   = reader.GetBoolean(2),
+                Category   = reader.IsDBNull(2) ? null : reader.GetString(2),
+                Embedded   = reader.GetBoolean(3),
             });
         return rows;
     }
 
     // ── Private helpers ───────────────────────────────────────
 
-    private async Task<string?> FindRelevantPolicyAsync(float[] embedding)
+    private async Task<string?> FindRelevantPolicyAsync(float[] embedding, string? category)
     {
         try
         {
             var vector = new Vector(embedding);
 
-            // Return both the policy text and its cosine distance.
-            // Cosine distance: 0 = identical, 1 = unrelated, 2 = opposite.
-            // Threshold 0.5 means "at least loosely related" — anything further is ignored.
-            var sql = """
-                SELECT policy_text, embedding <=> @q AS distance
-                FROM expense_policies
-                WHERE embedding IS NOT NULL
-                ORDER BY distance
-                LIMIT 1
-                """;
+            string sql;
+            NpgsqlCommand cmd;
+            await using var conn = await _dataSource!.OpenConnectionAsync();
 
-            await using var conn   = await _dataSource!.OpenConnectionAsync();
-            await using var cmd    = new NpgsqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("q", vector);
+            if (!string.IsNullOrEmpty(category))
+            {
+                sql = """
+                    SELECT policy_text, embedding <=> @q AS distance
+                    FROM expense_policies
+                    WHERE embedding IS NOT NULL AND (category ILIKE @category OR category IS NULL)
+                    ORDER BY (category ILIKE @category) DESC, distance
+                    LIMIT 1
+                    """;
+                cmd = new NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("q", vector);
+                cmd.Parameters.AddWithValue("category", category);
+            }
+            else
+            {
+                sql = """
+                    SELECT policy_text, embedding <=> @q AS distance
+                    FROM expense_policies
+                    WHERE embedding IS NOT NULL
+                    ORDER BY distance
+                    LIMIT 1
+                    """;
+                cmd = new NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("q", vector);
+            }
 
-            await using var reader = await cmd.ExecuteReaderAsync();
-            if (!await reader.ReadAsync()) return null;
+            await using (cmd)
+            {
+                await using var reader = await cmd.ExecuteReaderAsync();
+                if (!await reader.ReadAsync()) return null;
 
-            var policyText = reader.GetString(0);
-            var distance   = reader.GetDouble(1);
+                var policyText = reader.GetString(0);
+                var distance   = reader.GetDouble(1);
 
-            _logger.LogInformation("Nearest policy distance: {Distance:F4}", distance);
+                _logger.LogInformation("Nearest policy distance: {Distance:F4}", distance);
 
-            // Discard match if too dissimilar.
-            // Tuned from observed distances: meal/travel ~0.35, unrelated expenses ~0.38+
-            return distance < 0.36 ? policyText : null;
+                return distance < 0.36 ? policyText : null;
+            }
         }
         catch (Exception ex)
         {
