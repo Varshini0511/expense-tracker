@@ -63,7 +63,7 @@ public class ExpenseController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.PolicyText))
             return BadRequest(new { error = "Policy text is required" });
 
-        var id = await _expenseService.AddPolicyAsync(request.PolicyText);
+        var id = await _expenseService.AddPolicyAsync(request);
         return Ok(new { id, message = "Policy added. Call embed-policies to generate its embedding." });
     }
 
@@ -77,7 +77,7 @@ public class ExpenseController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.PolicyText))
             return BadRequest(new { error = "Policy text is required" });
 
-        var updated = await _expenseService.UpdatePolicyAsync(id, request.PolicyText);
+        var updated = await _expenseService.UpdatePolicyAsync(id, request);
         return updated
             ? Ok(new { message = "Policy updated. Call embed-policies to regenerate its embedding." })
             : NotFound(new { error = "Policy not found" });
