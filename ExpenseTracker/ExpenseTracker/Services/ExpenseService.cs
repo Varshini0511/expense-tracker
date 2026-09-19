@@ -71,7 +71,7 @@ public class ExpenseService : IExpenseService
                 PolicyAdvice = "Could not check policy — please review manually."
             };
 
-        var relevantPolicy = await FindRelevantPolicyAsync(embedding);
+        var relevantPolicy = await FindRelevantPolicyAsync(embedding, expense.Category);
 
         if (string.IsNullOrEmpty(relevantPolicy))
             return new PolicyCheckResult
