@@ -2,20 +2,23 @@
 import { useEffect, useState } from "react";
 import { getExpenses, deleteExpense, updateExpense, type Expense, type ExpensesResponse } from "@/lib/api";
 
-const CATEGORIES = ["Meals", "Travel", "Education", "Office supplies", "Accommodation"];
+const CATEGORIES = ["Meals", "Travel", "Education", "Office supplies", "Accommodation", "Software", "Hardware", "Miscellaneous"];
 
 const catColor: Record<string, string> = {
   Meals: "rgba(34,197,94,0.12)", Travel: "rgba(124,58,237,0.15)",
   Education: "rgba(59,130,246,0.12)", "Office supplies": "rgba(245,158,11,0.12)",
-  Accommodation: "rgba(239,68,68,0.12)",
+  Accommodation: "rgba(239,68,68,0.12)", Software: "rgba(168,85,247,0.12)",
+  Hardware: "rgba(20,184,166,0.12)", Miscellaneous: "rgba(107,114,128,0.12)",
 };
 const catText: Record<string, string> = {
   Meals: "#22c55e", Travel: "#a855f7", Education: "#3b82f6",
-  "Office supplies": "#f59e0b", Accommodation: "#ef4444",
+  "Office supplies": "#f59e0b", Accommodation: "#ef4444", Software: "#c084fc",
+  Hardware: "#2dd4bf", Miscellaneous: "#9ca3af",
 };
 const catEmoji: Record<string, string> = {
   Meals: "🍽️", Travel: "✈️", Education: "🎓",
-  "Office supplies": "📦", Accommodation: "🏨",
+  "Office supplies": "📦", Accommodation: "🏨", Software: "💻",
+  Hardware: "🖥️", Miscellaneous: "📌",
 };
 
 interface EditState {
