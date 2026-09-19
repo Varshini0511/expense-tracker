@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS expense_tracker.expenses (
 );
 
 CREATE TABLE IF NOT EXISTS expense_tracker.expense_policies (
-    id           SERIAL PRIMARY KEY,
-    policy_text  TEXT NOT NULL,
-    embedding    VECTOR(768)
+    id            SERIAL PRIMARY KEY,
+    policy_text   TEXT NOT NULL,
+    category      TEXT,
+    embedding     VECTOR(768)
 );
