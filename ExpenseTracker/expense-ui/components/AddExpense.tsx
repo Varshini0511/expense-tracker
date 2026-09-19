@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { addExpense, type AddExpenseResponse } from "@/lib/api";
 
-const CATEGORIES = ["Meals", "Travel", "Education", "Office supplies", "Accommodation"];
+const CATEGORIES = ["Meals", "Travel", "Education", "Office supplies", "Accommodation", "Software", "Hardware", "Miscellaneous"];
 
 function Label({ children }: { children: React.ReactNode }) {
   return (
