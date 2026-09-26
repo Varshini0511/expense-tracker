@@ -48,9 +48,9 @@ public class ExpenseController : ControllerBase
     // GET /api/expenses/policies
     // ----------------------------------------------------------
     [HttpGet("policies")]
-    public async Task<IActionResult> GetPolicies()
+    public async Task<IActionResult> GetPolicies([FromQuery] string? policyType)
     {
-        var policies = await _expenseService.GetPoliciesAsync();
+        var policies = await _expenseService.GetPoliciesAsync(policyType);
         return Ok(policies);
     }
 
