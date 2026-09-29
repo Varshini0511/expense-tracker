@@ -312,6 +312,16 @@ export default function Policies() {
           Add new policy
         </p>
 
+        <select
+          value={newType}
+          onChange={(e) => setNewType(e.target.value)}
+          style={{ width: "100%", marginBottom: 12, padding: "8px 12px", borderRadius: 8, background: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border-2)" }}
+        >
+          {POLICY_TYPES.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
+
         <textarea
           rows={3}
           placeholder="e.g. Entertainment expenses above ₹5,000 require VP approval and a business justification."
