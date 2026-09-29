@@ -34,7 +34,7 @@ export default function Policies() {
     setAdding(true);
     setAddError("");
     try {
-      const row = await addPolicy(newText.trim());
+      const row = await addPolicy(newText.trim(), newType);
       setPolicies((p) => [...p, row]);
       setNewText("");
       setEmbedMsg("");
