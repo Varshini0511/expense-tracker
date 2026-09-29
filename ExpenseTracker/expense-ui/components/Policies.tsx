@@ -2,11 +2,14 @@
 import { useEffect, useState } from "react";
 import { getPolicies, addPolicy, updatePolicy, embedPolicies, type PolicyRow } from "@/lib/api";
 
+const POLICY_TYPES = ["Food","Travel","Medical","School","Rent","Emi","EB"];
+
 export default function Policies() {
   const [policies, setPolicies]   = useState<PolicyRow[]>([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState("");
   const [newText, setNewText]     = useState("");
+  const [newType, setNewType]     = useState(POLICY_TYPES[0]);
   const [adding, setAdding]       = useState(false);
   const [addError, setAddError]   = useState("");
   const [embedding, setEmbedding] = useState(false);
@@ -31,7 +34,7 @@ export default function Policies() {
     setAdding(true);
     setAddError("");
     try {
-      const row = await addPolicy(newText.trim());
+      const row = await addPolicy(newText.trim(), newType);
       setPolicies((p) => [...p, row]);
       setNewText("");
       setEmbedMsg("");
@@ -141,97 +144,118 @@ export default function Policies() {
           </div>
         ) : (
           <div>
-            {policies.map((p, i) => (
-              <div key={p.id} style={{
-                display: "flex", gap: 14, padding: "16px 20px",
-                borderBottom: i < policies.length - 1 ? "1px solid var(--border)" : "none",
-              }}>
-                <div style={{
-                  width: 26, height: 26, borderRadius: 8, flexShrink: 0,
-                  background: "var(--surface-2)", border: "1px solid var(--border-2)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 12, color: "var(--text-3)", fontWeight: 500, marginTop: 1,
-                }}>
-                  {i + 1}
-                </div>
-
-                {editId === p.id ? (
-                  /* ── Edit mode ─────────────────────────── */
-                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
-                    <textarea
-                      rows={3}
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) saveEdit(p.id);
-                        if (e.key === "Escape") cancelEdit();
-                      }}
-                      autoFocus
-                    />
-                    {editError && (
-                      <p style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>⚠ {editError}</p>
-                    )}
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <button
-                        onClick={() => saveEdit(p.id)}
-                        disabled={savingEdit || !editText.trim()}
-                        style={{
-                          background: "linear-gradient(135deg, #7c3aed, #a855f7)",
-                          color: "white", border: "none", padding: "7px 16px",
-                          borderRadius: 8, fontSize: 12, fontWeight: 500,
-                          cursor: savingEdit || !editText.trim() ? "not-allowed" : "pointer",
-                          opacity: savingEdit || !editText.trim() ? .5 : 1,
-                        }}
-                      >
-                        {savingEdit ? "Saving…" : "Save"}
-                      </button>
-                      <button
-                        onClick={cancelEdit}
-                        disabled={savingEdit}
-                        style={{
-                          background: "var(--surface-2)", border: "1px solid var(--border-2)",
-                          color: "var(--text-2)", padding: "7px 14px", borderRadius: 8,
-                          fontSize: 12, cursor: "pointer",
-                        }}
-                      >
-                        Cancel
-                      </button>
-                      <span style={{ fontSize: 11, color: "var(--text-3)" }}>
-                        Editing clears the embedding — re-embed after saving
-                      </span>
-                    </div>
+            {POLICY_TYPES.map((type) => {
+              const typePolicies = policies.filter(
+                (p) => (p.policyType ?? "").toLowerCase() === type.toLowerCase()
+              );
+              if (typePolicies.length === 0) return null;
+              return (
+                <div key={type}>
+                  <div style={{
+                    padding: "12px 20px", background: "var(--surface-2)",
+                    borderBottom: "1px solid var(--border)", borderTop: "1px solid var(--border)",
+                    fontSize: 12, fontWeight: 600, color: "var(--text-2)", textTransform: "uppercase",
+                    letterSpacing: ".05em"
+                  }}>
+                    {type}
                   </div>
-                ) : (
-                  /* ── View mode ─────────────────────────── */
-                  <>
-                    <p style={{ flex: 1, fontSize: 13, lineHeight: 1.7, color: "var(--text-2)", margin: 0 }}>
-                      {p.policyText}
-                    </p>
-                    <button
-                      onClick={() => startEdit(p)}
-                      title="Edit policy"
-                      style={{
-                        flexShrink: 0, height: "fit-content", marginTop: 1,
-                        background: "transparent", border: "1px solid var(--border-2)",
-                        color: "var(--text-3)", padding: "4px 10px", borderRadius: 8,
-                        fontSize: 11, cursor: "pointer",
-                      }}
-                    >
-                      ✎ Edit
-                    </button>
-                    <span style={{
-                      flexShrink: 0, fontSize: 11, padding: "3px 10px", borderRadius: 99,
-                      height: "fit-content", marginTop: 3, whiteSpace: "nowrap",
-                      background: p.embedded ? "rgba(34,197,94,0.1)"  : "rgba(245,158,11,0.1)",
-                      color:      p.embedded ? "#22c55e"               : "#f59e0b",
-                      border: `1px solid ${p.embedded ? "rgba(34,197,94,0.2)" : "rgba(245,158,11,0.2)"}`,
-                    }}>
-                      {p.embedded ? "✓ Embedded" : "⏳ Pending"}
-                    </span>
-                  </>
-                )}
-              </div>
-            ))}
+                  {typePolicies.map((p, i) => {
+                    const globalIdx = policies.indexOf(p);
+                    return (
+                      <div key={p.id} style={{
+                        display: "flex", gap: 14, padding: "16px 20px",
+                        borderBottom: globalIdx < policies.length - 1 ? "1px solid var(--border)" : "none",
+                      }}>
+                        <div style={{
+                          width: 26, height: 26, borderRadius: 8, flexShrink: 0,
+                          background: "var(--surface-2)", border: "1px solid var(--border-2)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: 12, color: "var(--text-3)", fontWeight: 500, marginTop: 1,
+                        }}>
+                          {globalIdx + 1}
+                        </div>
+
+                        {editId === p.id ? (
+                          /* ── Edit mode ─────────────────────────── */
+                          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+                            <textarea
+                              rows={3}
+                              value={editText}
+                              onChange={(e) => setEditText(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) saveEdit(p.id);
+                                if (e.key === "Escape") cancelEdit();
+                              }}
+                              autoFocus
+                            />
+                            {editError && (
+                              <p style={{ fontSize: 12, color: "var(--red)", margin: 0 }}>⚠ {editError}</p>
+                            )}
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <button
+                                onClick={() => saveEdit(p.id)}
+                                disabled={savingEdit || !editText.trim()}
+                                style={{
+                                  background: "linear-gradient(135deg, #7c3aed, #a855f7)",
+                                  color: "white", border: "none", padding: "7px 16px",
+                                  borderRadius: 8, fontSize: 12, fontWeight: 500,
+                                  cursor: savingEdit || !editText.trim() ? "not-allowed" : "pointer",
+                                  opacity: savingEdit || !editText.trim() ? .5 : 1,
+                                }}
+                              >
+                                {savingEdit ? "Saving…" : "Save"}
+                              </button>
+                              <button
+                                onClick={cancelEdit}
+                                disabled={savingEdit}
+                                style={{
+                                  background: "var(--surface-2)", border: "1px solid var(--border-2)",
+                                  color: "var(--text-2)", padding: "7px 14px", borderRadius: 8,
+                                  fontSize: 12, cursor: "pointer",
+                                }}
+                              >
+                                Cancel
+                              </button>
+                              <span style={{ fontSize: 11, color: "var(--text-3)" }}>
+                                Editing clears the embedding — re-embed after saving
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          /* ── View mode ─────────────────────────── */
+                          <>
+                            <p style={{ flex: 1, fontSize: 13, lineHeight: 1.7, color: "var(--text-2)", margin: 0 }}>
+                              {p.policyText}
+                            </p>
+                            <button
+                              onClick={() => startEdit(p)}
+                              title="Edit policy"
+                              style={{
+                                flexShrink: 0, height: "fit-content", marginTop: 1,
+                                background: "transparent", border: "1px solid var(--border-2)",
+                                color: "var(--text-3)", padding: "4px 10px", borderRadius: 8,
+                                fontSize: 11, cursor: "pointer",
+                              }}
+                            >
+                              ✎ Edit
+                            </button>
+                            <span style={{
+                              flexShrink: 0, fontSize: 11, padding: "3px 10px", borderRadius: 99,
+                              height: "fit-content", marginTop: 3, whiteSpace: "nowrap",
+                              background: p.embedded ? "rgba(34,197,94,0.1)"  : "rgba(245,158,11,0.1)",
+                              color:      p.embedded ? "#22c55e"               : "#f59e0b",
+                              border: `1px solid ${p.embedded ? "rgba(34,197,94,0.2)" : "rgba(245,158,11,0.2)"}`,
+                            }}>
+                              {p.embedded ? "✓ Embedded" : "⏳ Pending"}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -287,6 +311,16 @@ export default function Policies() {
         }}>
           Add new policy
         </p>
+
+        <select
+          value={newType}
+          onChange={(e) => setNewType(e.target.value)}
+          style={{ width: "100%", marginBottom: 12, padding: "8px 12px", borderRadius: 8, background: "var(--surface-2)", color: "var(--text)", border: "1px solid var(--border-2)" }}
+        >
+          {POLICY_TYPES.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
 
         <textarea
           rows={3}

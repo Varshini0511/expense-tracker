@@ -13,7 +13,7 @@ public interface IExpenseService
     Task<int> SaveExpenseAsync(AddExpenseRequest expense);
     Task<List<Expense>> GetExpensesAsync();
     Task EmbedPoliciesAsync();
-    Task<List<PolicyRow>> GetPoliciesAsync();
+    Task<List<PolicyRow>> GetPoliciesAsync(string? policyType = null);
     Task<bool> DeleteExpenseAsync(int id);
     Task<bool> UpdateExpenseAsync(int id, AddExpenseRequest request);
     Task<int> AddPolicyAsync(string policyText);
@@ -215,12 +215,25 @@ public class ExpenseService : IExpenseService
         return await cmd.ExecuteNonQueryAsync() > 0;
     }
 
-    public async Task<List<PolicyRow>> GetPoliciesAsync()
+    public async Task<List<PolicyRow>> GetPoliciesAsync(string? policyType = null)
     {
         var rows = new List<PolicyRow>();
         await using var conn = await _dataSource!.OpenConnectionAsync();
-        var sql = "SELECT id, policy_text, category, embedding IS NOT NULL FROM expense_policies ORDER BY id";
-        await using var cmd    = new NpgsqlCommand(sql, conn);
+        
+        string sql;
+        NpgsqlCommand cmd;
+        if (!string.IsNullOrEmpty(policyType))
+        {
+            sql = "SELECT id, policy_text, category, embedding IS NOT NULL FROM expense_policies WHERE category ILIKE @policyType ORDER BY id";
+            cmd = new NpgsqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("policyType", policyType);
+        }
+        else
+        {
+            sql = "SELECT id, policy_text, category, embedding IS NOT NULL FROM expense_policies ORDER BY id";
+            cmd = new NpgsqlCommand(sql, conn);
+        }
+
         await using var reader = await cmd.ExecuteReaderAsync();
         while (await reader.ReadAsync())
             rows.Add(new PolicyRow
