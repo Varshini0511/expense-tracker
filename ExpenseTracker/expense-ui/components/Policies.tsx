@@ -2,11 +2,14 @@
 import { useEffect, useState } from "react";
 import { getPolicies, addPolicy, updatePolicy, embedPolicies, type PolicyRow } from "@/lib/api";
 
+const POLICY_TYPES = ["Food","Travel","Medical","School","Rent","Emi","EB"];
+
 export default function Policies() {
   const [policies, setPolicies]   = useState<PolicyRow[]>([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState("");
   const [newText, setNewText]     = useState("");
+  const [newType, setNewType]     = useState(POLICY_TYPES[0]);
   const [adding, setAdding]       = useState(false);
   const [addError, setAddError]   = useState("");
   const [embedding, setEmbedding] = useState(false);
