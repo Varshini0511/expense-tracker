@@ -13,7 +13,7 @@ public interface IExpenseService
     Task<int> SaveExpenseAsync(AddExpenseRequest expense);
     Task<List<Expense>> GetExpensesAsync();
     Task EmbedPoliciesAsync();
-    Task<List<PolicyRow>> GetPoliciesAsync();
+    Task<List<PolicyRow>> GetPoliciesAsync(string? policyType = null);
     Task<bool> DeleteExpenseAsync(int id);
     Task<bool> UpdateExpenseAsync(int id, AddExpenseRequest request);
     Task<int> AddPolicyAsync(string policyText);
