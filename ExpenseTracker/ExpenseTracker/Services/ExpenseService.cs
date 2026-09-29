@@ -24,6 +24,7 @@ public class PolicyRow
 {
     public int    Id         { get; set; }
     public string PolicyText { get; set; } = string.Empty;
+    public string? PolicyType { get; set;
     public bool   Embedded   { get; set; }
 }
 
