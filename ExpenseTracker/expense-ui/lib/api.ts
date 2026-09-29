@@ -56,18 +56,19 @@ export async function addExpense(body: AddExpenseRequest): Promise<AddExpenseRes
 export interface PolicyRow {
   id: number;
   policyText: string;
+  policyType?: string | null;
   embedded: boolean;
 }
 
-export async function addPolicy(policyText: string): Promise<PolicyRow> {
+export async function addPolicy(policyText: string, policyType?: string): Promise<PolicyRow> {
   const res = await fetch(`${BASE}/policies`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ policyText }),
+    body: JSON.stringify({ policyText, policyType }),
   });
   if (!res.ok) throw new Error(await res.text());
   const data = await res.json();
-  return { id: data.id, policyText, embedded: false };
+  return { id: data.id, policyText, policyType: policyType ?? null, embedded: false };
 }
 
 export async function updatePolicy(id: number, policyText: string): Promise<void> {
@@ -79,8 +80,9 @@ export async function updatePolicy(id: number, policyText: string): Promise<void
   if (!res.ok) throw new Error(await res.text());
 }
 
-export async function getPolicies(): Promise<PolicyRow[]> {
-  const res = await fetch(`${BASE}/policies`);
+export async function getPolicies(policyType?: string): Promise<PolicyRow[]> {
+  const url = policyType ? `${BASE}/policies?policyType=${encodeURIComponent(policyType)}` : `${BASE}/policies`;
+  const res = await fetch(url);
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
