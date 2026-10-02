@@ -56,26 +56,26 @@ export async function addExpense(body: AddExpenseRequest): Promise<AddExpenseRes
 export interface PolicyRow {
   id: number;
   policyText: string;
-  category?: string | null;
+  policyType?: string | null;
   embedded: boolean;
 }
 
-export async function addPolicy(policyText: string, category?: string): Promise<PolicyRow> {
+export async function addPolicy(policyText: string, policyType?: string): Promise<PolicyRow> {
   const res = await fetch(`${BASE}/policies`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ policyText, category }),
+    body: JSON.stringify({ policyText, policyType }),
   });
   if (!res.ok) throw new Error(await res.text());
   const data = await res.json();
-  return { id: data.id, policyText, category: category ?? null, embedded: false };
+  return { id: data.id, policyText, policyType: policyType ?? null, embedded: false };
 }
 
-export async function updatePolicy(id: number, policyText: string, category?: string): Promise<void> {
+export async function updatePolicy(id: number, policyText: string, policyType?: string): Promise<void> {
   const res = await fetch(`${BASE}/policies/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ policyText, category }),
+    body: JSON.stringify({ policyText, policyType }),
   });
   if (!res.ok) throw new Error(await res.text());
 }
