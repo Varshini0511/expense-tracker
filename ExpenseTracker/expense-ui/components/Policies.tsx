@@ -146,7 +146,7 @@ export default function Policies() {
           <div>
             {POLICY_TYPES.map((type) => {
               const typePolicies = policies.filter(
-                (p) => (p.policyType ?? "").toLowerCase() === type.toLowerCase()
+                (p) => (p.category ?? "").toLowerCase() === type.toLowerCase()
               );
               if (typePolicies.length === 0) return null;
               return (
